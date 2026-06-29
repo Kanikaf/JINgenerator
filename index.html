@@ -1,7 +1,11 @@
+<!-- v4 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>キミは○○JIN ジェネレーター</title>
 <style>
@@ -360,7 +364,8 @@ function ss(id, state) {
 
 // ─── File upload ─────────────────────────────────────────
 function handleFile(e) {
-  const file = e.target.files[0]; if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
   processFile(file);
 }
 
@@ -374,6 +379,9 @@ function processFile(file) {
     document.getElementById('previewName').textContent = '✓ ' + file.name;
     document.getElementById('previewArea').style.display = 'block';
     updateSteps();
+    // Force button state check
+    const hasText = document.getElementById('jinText').value.trim().length > 0;
+    document.getElementById('btnGenerate').disabled = !(hasText && charB64);
   };
   reader.onerror = () => { alert('読み込み失敗。別の画像を試してください。'); };
   reader.readAsDataURL(file);
