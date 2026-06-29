@@ -300,19 +300,13 @@
 <!-- Image upload -->
 <div class="card">
   <div class="card-title">🖼️ キャラクター画像</div>
-  <label class="upload-area" id="uploadArea" for="fileInput"
-    ondragover="onDragOver(event)"
-    ondragleave="onDragLeave(event)"
-    ondrop="onDrop(event)">
-    <div id="uploadInner">
-      <div class="upload-icon">📷</div>
-      <div class="upload-text">タップ / クリック または画像をドロップ</div>
-      <div class="upload-sub">PNG / JPG / WEBP ／ 背景ありでもOK</div>
-    </div>
-  </label>
-  <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)" style="display:none;" />
-  <div id="previewArea" style="display:none; margin-top:10px; text-align:center;">
-    <img id="previewImg" src="" style="max-height:150px; max-width:100%; border-radius:8px; object-fit:contain;" />
+  <input type="file" id="fileInput" accept="image/*"
+    style="display:block; width:100%; padding:0.6rem; background:var(--surface2);
+           border:1px solid var(--border); border-radius:8px; color:var(--text);
+           font-size:0.88rem; cursor:pointer;"
+    onchange="handleFile(event)" />
+  <div id="previewArea" style="display:none; margin-top:12px; text-align:center;">
+    <img id="previewImg" src="" style="max-height:180px; max-width:100%; border-radius:8px; object-fit:contain; border:1px solid var(--border);" />
     <div style="font-size:0.78rem; color:#6ec460; margin-top:6px;" id="previewName"></div>
   </div>
 </div>
@@ -345,9 +339,7 @@ let charB64 = null, charMime = null;
 
 // ─── Init ────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => { updateSteps(); });
-// Prevent browser from opening dropped files anywhere outside upload area
-window.addEventListener('dragover', e => e.preventDefault());
-window.addEventListener('drop', e => e.preventDefault());
+
 
 // ─── API key ─────────────────────────────────────────────
 
@@ -371,43 +363,19 @@ function handleFile(e) {
   const file = e.target.files[0]; if (!file) return;
   processFile(file);
 }
-function onDragOver(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  document.getElementById('uploadArea').classList.add('drag');
-}
-function onDragLeave(e) {
-  e.preventDefault();
-  document.getElementById('uploadArea').classList.remove('drag');
-}
-function onDrop(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  document.getElementById('uploadArea').classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) processFile(file);
-}
+
 function processFile(file) {
   const reader = new FileReader();
   reader.onload = ev => {
     const dataUrl = ev.target.result;
     charMime = file.type || 'image/png';
     charB64  = dataUrl.split(',')[1];
-    // Update preview area (outside label to avoid re-triggering file dialog)
-    const preview = document.getElementById('previewArea');
-    const img     = document.getElementById('previewImg');
-    const name    = document.getElementById('previewName');
-    img.src   = dataUrl;
-    name.textContent = '✓ ' + file.name;
-    preview.style.display = 'block';
-    // Update upload area label style
-    document.getElementById('uploadArea').classList.add('has-file');
-    document.getElementById('uploadInner').innerHTML =
-      '<div class="upload-icon" style="font-size:1.5rem;opacity:0.5">✅</div>' +
-      '<div class="upload-text" style="font-size:0.82rem">画像を変更する場合はここをタップ</div>';
+    document.getElementById('previewImg').src = dataUrl;
+    document.getElementById('previewName').textContent = '✓ ' + file.name;
+    document.getElementById('previewArea').style.display = 'block';
     updateSteps();
   };
-  reader.onerror = () => { alert('画像の読み込みに失敗しました。別の画像を試してください。'); };
+  reader.onerror = () => { alert('読み込み失敗。別の画像を試してください。'); };
   reader.readAsDataURL(file);
 }
 
