@@ -311,6 +311,10 @@
     </div>
   </label>
   <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)" style="display:none;" />
+  <div id="previewArea" style="display:none; margin-top:10px; text-align:center;">
+    <img id="previewImg" src="" style="max-height:150px; max-width:100%; border-radius:8px; object-fit:contain;" />
+    <div style="font-size:0.78rem; color:#6ec460; margin-top:6px;" id="previewName"></div>
+  </div>
 </div>
 
 <button class="btn-generate" id="btnGenerate" onclick="generate()" disabled>
@@ -389,11 +393,21 @@ function processFile(file) {
     const dataUrl = ev.target.result;
     charMime = file.type || 'image/png';
     charB64  = dataUrl.split(',')[1];
-    document.getElementById('uploadInner').innerHTML =
-      `<img src="${dataUrl}"><div class="upload-sub" style="color:#6ec460">✓ ${file.name}</div>`;
+    // Update preview area (outside label to avoid re-triggering file dialog)
+    const preview = document.getElementById('previewArea');
+    const img     = document.getElementById('previewImg');
+    const name    = document.getElementById('previewName');
+    img.src   = dataUrl;
+    name.textContent = '✓ ' + file.name;
+    preview.style.display = 'block';
+    // Update upload area label style
     document.getElementById('uploadArea').classList.add('has-file');
+    document.getElementById('uploadInner').innerHTML =
+      '<div class="upload-icon" style="font-size:1.5rem;opacity:0.5">✅</div>' +
+      '<div class="upload-text" style="font-size:0.82rem">画像を変更する場合はここをタップ</div>';
     updateSteps();
   };
+  reader.onerror = () => { alert('画像の読み込みに失敗しました。別の画像を試してください。'); };
   reader.readAsDataURL(file);
 }
 
