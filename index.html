@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>キミは○○JIN ジェネレーター</title>
+<style>
+  :root {
+    --gold: #d4a017;
+    --gold-dark: #8a6200;
+    --bg: #0f0a00;
+    --surface: #1e1508;
+    --surface2: #2a1e08;
+    --border: #3d2e10;
+    --text: #f5e6c0;
+    --text-sub: #a08858;
+    --radius: 12px;
+    --accent: #f0c040;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fffacc 0%, #ffd700 40%, #e8a000 70%, #ffd700 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    margin-bottom: 0.4rem;
+  }
+  .header p {
+    font-size: 0.85rem;
+    color: var(--text-sub);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    width: 100%;
+    max-width: 520px;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    margin-bottom: 0.4rem;
+  }
+  input[type=text], input[type=password] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95rem;
+    padding: 0.6rem 0.85rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type=text]:focus, input[type=password]:focus {
+    border-color: var(--gold);
+  }
+  .api-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .api-row input { flex: 1; font-family: monospace; font-size: 0.82rem; }
+  .btn-sm {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-sub);
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-sm:hover { border-color: var(--gold); color: var(--gold); }
+  .api-hint {
+    font-size: 0.72rem;
+    color: var(--text-sub);
+    margin-top: 0.5rem;
+  }
+  .api-hint a { color: var(--gold); text-decoration: none; }
+  .api-hint a:hover { text-decoration: underline; }
+  .jin-input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .jin-input-wrap:focus-within { border-color: var(--gold); }
+  .jin-prefix {
+    padding: 0.6rem 0.7rem 0.6rem 0.85rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-sub);
+    background: transparent;
+    white-space: nowrap;
+    border-right: 1px solid var(--border);
+  }
+  .jin-input-wrap input {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    flex: 1;
+    padding-left: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .jin-suffix {
+    padding: 0.6rem 0.85rem 0.6rem 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-sub);
+    white-space: nowrap;
+  }
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--surface2);
+    position: relative;
+  }
+  .upload-area:hover, .upload-area.drag { border-color: var(--gold); background: #2a1e00; }
+  .upload-area.has-file { border-style: solid; border-color: #3d8a30; }
+  .upload-icon { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.6; }
+  .upload-text { font-size: 0.9rem; color: var(--text); margin-bottom: 0.3rem; }
+  .upload-sub { font-size: 0.75rem; color: var(--text-sub); }
+  .upload-area img { max-height: 140px; max-width: 100%; border-radius: 8px; margin-bottom: 0.5rem; object-fit: contain; }
+  input[type=file] { display: none; }
+  .btn-generate {
+    width: 100%;
+    max-width: 520px;
+    padding: 0.9rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    border-radius: var(--radius);
+    border: none;
+    background: linear-gradient(135deg, #e8a000, #ffd700, #e8a000);
+    color: #1a0800;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-top: 0.5rem;
+  }
+  .btn-generate:hover { opacity: 0.92; }
+  .btn-generate:active { transform: scale(0.98); }
+  .btn-generate:disabled { background: var(--border); color: var(--text-sub); cursor: not-allowed; opacity: 0.6; }
+  .progress-wrap {
+    width: 100%;
+    max-width: 520px;
+    margin-top: 1rem;
+    display: none;
+  }
+  .progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e8a000, #ffd700);
+    width: 0%;
+    transition: width 0.4s ease;
+    border-radius: 2px;
+  }
+  .status-msg {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    margin-top: 0.5rem;
+    text-align: center;
+    min-height: 1.2em;
+  }
+  .status-msg.error { color: #e04040; }
+  .result-wrap {
+    width: 100%;
+    max-width: 520px;
+    margin-top: 1.5rem;
+    display: none;
+    text-align: center;
+  }
+  .result-wrap canvas {
+    width: 100%;
+    max-width: 480px;
+    border-radius: var(--radius);
+    display: block;
+    margin: 0 auto;
+    box-shadow: 0 8px 40px rgba(212,160,23,0.2);
+  }
+  .result-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .btn-dl {
+    padding: 0.65rem 1.4rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .btn-dl:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-regen {
+    padding: 0.65rem 1.4rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-sub);
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .btn-regen:hover { border-color: var(--gold); color: var(--gold); }
+  .steps {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    max-width: 520px;
+    margin-bottom: 1.25rem;
+  }
+  .step {
+    flex: 1;
+    text-align: center;
+    font-size: 0.68rem;
+    padding: 5px 2px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    color: var(--text-sub);
+    background: var(--surface);
+    transition: all 0.2s;
+  }
+  .step.active { border-color: var(--gold); color: var(--gold); background: #1e1500; }
+  .step.done { border-color: #3d8a30; color: #6ec460; background: #0f1e0a; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ キミは○○JIN</h1>
+  <p>好きなキャラの画像と文字を入れてオマージュ画像を生成</p>
+</div>
+
+<div class="steps">
+  <div class="step" id="s2">② 文字</div>
+  <div class="step" id="s3">③ 画像</div>
+  <div class="step" id="s4">④ 生成</div>
+</div>
+
+<!-- Text input -->
+<div class="card">
+  <div class="card-title">✏️ ○○ に入る文字</div>
+  <div class="jin-input-wrap">
+    <span class="jin-prefix">キミは</span>
+    <input type="text" id="jinText" placeholder="SAIIYA" maxlength="20"
+      oninput="this.value=this.value.toUpperCase(); updateSteps();" />
+    <span class="jin-suffix">JIN</span>
+  </div>
+</div>
+
+<!-- Image upload -->
+<div class="card">
+  <div class="card-title">🖼️ キャラクター画像</div>
+  <div class="upload-area" id="uploadArea"
+    onclick="document.getElementById('fileInput').click()"
+    ondragover="onDragOver(event)"
+    ondragleave="onDragLeave(event)"
+    ondrop="onDrop(event)">
+    <div id="uploadInner">
+      <div class="upload-icon">📷</div>
+      <div class="upload-text">クリックまたは画像をドロップ</div>
+      <div class="upload-sub">PNG / JPG / WEBP ／ 背景ありでもOK</div>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)" />
+</div>
+
+<button class="btn-generate" id="btnGenerate" onclick="generate()" disabled>
+  ✨ 画像を生成する
+</button>
+
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="status-msg" id="statusMsg"></div>
+</div>
+
+<div class="result-wrap" id="resultWrap">
+  <canvas id="outputCanvas" width="1024" height="1024"></canvas>
+  <div class="result-actions">
+    <button class="btn-dl" onclick="downloadImage()">⬇ PNG ダウンロード</button>
+    <button class="btn-regen" onclick="generate()">🔄 再生成</button>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────
+let charB64 = null, charMime = null;
+
+// ─── Init ────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => { updateSteps(); });
+
+// ─── API key ─────────────────────────────────────────────
+
+
+// ─── Steps ───────────────────────────────────────────────
+function updateSteps() {
+  const hasKey  = true;
+  const hasText = document.getElementById('jinText').value.trim().length > 0;
+  const hasImg  = charB64 !== null;
+  ss('s2', hasText ? 'done' : 'active');
+  ss('s3', hasImg  ? 'done' : (hasText ? 'active' : ''));
+  ss('s4', (hasText && hasImg) ? 'active' : '');
+  document.getElementById('btnGenerate').disabled = !(hasText && hasImg);
+}
+function ss(id, state) {
+  document.getElementById(id).className = 'step' + (state ? ' ' + state : '');
+}
+
+// ─── File upload ─────────────────────────────────────────
+function handleFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  processFile(file);
+}
+function onDragOver(e) { e.preventDefault(); document.getElementById('uploadArea').classList.add('drag'); }
+function onDragLeave(e) { document.getElementById('uploadArea').classList.remove('drag'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) processFile(file);
+}
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    charMime = file.type || 'image/png';
+    charB64  = dataUrl.split(',')[1];
+    document.getElementById('uploadInner').innerHTML =
+      `<img src="${dataUrl}"><div class="upload-sub" style="color:#6ec460">✓ ${file.name}</div>`;
+    document.getElementById('uploadArea').classList.add('has-file');
+    updateSteps();
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── Gemini image generation ─────────────────────────────
+async function callGeminiImgGen(apiKey, prompt, b64, mime) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mime, data: b64 } }
+        ]
+      }],
+      generationConfig: { response_modalities: ['IMAGE', 'TEXT'] }
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// ─── Canvas helpers ──────────────────────────────────────
+function drawBg(ctx, S) {
+  ctx.fillStyle = '#0d0600';
+  ctx.fillRect(0, 0, S, S);
+
+  const cx = S/2, cy = S/2;
+  const palette = [
+    '#ff2200','#ff6600','#ffaa00','#ffee00',
+    '#aaee00','#00ee44','#00ddcc','#00aaff',
+    '#4466ff','#8833ff','#cc00ff','#ff00aa','#ff2200'
+  ];
+
+  // Swirl rings
+  for (let i = 0; i < 800; i++) {
+    const t = i / 800;
+    const angle = t * Math.PI * 24;
+    const r = t * S * 0.68;
+    const ci = Math.floor(t * (palette.length - 1));
+    const cf = t * (palette.length - 1) - ci;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, angle, angle + 0.18);
+    ctx.lineWidth = S / 70;
+    ctx.strokeStyle = palette[Math.min(ci, palette.length-1)];
+    ctx.globalAlpha = 0.75 + 0.25 * Math.sin(t * Math.PI * 8);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Radial burst lines
+  for (let a = 0; a < 36; a++) {
+    const ang = (a / 36) * Math.PI * 2;
+    const grad = ctx.createLinearGradient(cx, cy,
+      cx + Math.cos(ang)*S*0.55, cy + Math.sin(ang)*S*0.55);
+    grad.addColorStop(0, 'rgba(255,220,100,0.08)');
+    grad.addColorStop(1, 'rgba(255,220,100,0)');
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(ang)*S*0.55, cy + Math.sin(ang)*S*0.55);
+    ctx.lineWidth = S/45;
+    ctx.strokeStyle = grad;
+    ctx.stroke();
+  }
+
+  // Center glow
+  const glow = ctx.createRadialGradient(cx,cy,0,cx,cy,S*0.35);
+  glow.addColorStop(0,'rgba(255,200,80,0.12)');
+  glow.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0,0,S,S);
+
+  // Black bars
+  ctx.fillStyle='#0a0400';
+  ctx.fillRect(0,0,S,S*0.048);
+  ctx.fillRect(0,S*0.952,S,S*0.048);
+
+  // Sparkle star (bottom-right)
+  drawSparkle(ctx, S*0.87, S*0.80, 20, '#fff');
+  drawSparkle(ctx, S*0.78, S*0.88, 10, 'rgba(255,255,255,0.5)');
+}
+
+function drawSparkle(ctx, x, y, size, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 4; i++) {
+    const a = (i/4)*Math.PI*2 + Math.PI/8;
+    const len = i%2===0 ? size : size*0.55;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(Math.cos(a)*len, Math.sin(a)*len);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawGoldText(ctx, text, x, y, S) {
+  let fs = Math.floor(S * 0.115);
+  ctx.font = `900 ${fs}px 'Arial Black', Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  while (ctx.measureText(text).width > S*0.95 && fs > 32) {
+    fs -= 2;
+    ctx.font = `900 ${fs}px 'Arial Black', Arial, sans-serif`;
+  }
+
+  // Shadow
+  ctx.shadowColor = 'rgba(0,0,0,0.9)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetX = fs*0.05;
+  ctx.shadowOffsetY = fs*0.08;
+  ctx.fillStyle = '#1a0800';
+  ctx.fillText(text, x+fs*0.04, y+fs*0.07);
+  ctx.shadowBlur=0; ctx.shadowOffsetX=0; ctx.shadowOffsetY=0;
+
+  // Dark stroke
+  ctx.lineWidth = fs * 0.13;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#2a1000';
+  ctx.strokeText(text, x, y);
+
+  // Gold fill
+  const g = ctx.createLinearGradient(0, y-fs*0.6, 0, y+fs*0.6);
+  g.addColorStop(0,   '#fffde0');
+  g.addColorStop(0.15,'#ffe066');
+  g.addColorStop(0.45,'#d4860a');
+  g.addColorStop(0.65,'#ffd700');
+  g.addColorStop(1,   '#9a6200');
+  ctx.fillStyle = g;
+  ctx.fillText(text, x, y);
+
+  // Highlight gloss
+  const h = ctx.createLinearGradient(0, y-fs*0.6, 0, y+fs*0.05);
+  h.addColorStop(0, 'rgba(255,255,230,0.55)');
+  h.addColorStop(1, 'rgba(255,255,230,0)');
+  ctx.fillStyle = h;
+  ctx.fillText(text, x, y);
+
+  return fs;
+}
+
+function drawSubtitle(ctx, text, x, y, S) {
+  const fs = S * 0.036;
+  ctx.save();
+  ctx.font = `600 ${fs}px Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // drop shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillText(text, x+1.5, y+1.5);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function loadImg(b64, mime) {
+  return new Promise((res,rej)=>{
+    const img = new Image();
+    img.onload = ()=>res(img);
+    img.onerror = rej;
+    img.src = `data:${mime};base64,${b64}`;
+  });
+}
+
+// ─── Main generate ────────────────────────────────────────
+async function generate() {
+  const apiKey  = 'AIzaAb8RN6JXBpZavs8JCZU8liuadiqzEKReBPKKvQSqylrSLUYsoQ';
+  const jinText = document.getElementById('jinText').value.trim().toUpperCase();
+  if (!jinText || !charB64) return;
+
+  const btn = document.getElementById('btnGenerate');
+  btn.disabled = true;
+  document.getElementById('resultWrap').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'block';
+  setStep4('active');
+
+  try {
+    setProgress(8, '🎨 Gemini にキャラクター抽出＋Tポーズ化を依頼中...');
+
+    // ── Gemini prompt ──────────────────────────────────────
+    const prompt = `You are given an image that may contain a character (anime, illustration, photo, game art, etc.) possibly with a background.
+
+Your task:
+1. Identify the MAIN CHARACTER in the image.
+2. Extract ONLY that character, completely removing any background.
+3. Redraw or composite the character in a FULL-BODY T-POSE: standing straight upright, both arms stretched out horizontally to the sides (like the letter T), facing the viewer directly from the front.
+4. Preserve the character's original appearance: clothing, hair color/style, skin tone, accessories, art style.
+5. The output image must have a PURE WHITE or TRANSPARENT background with ONLY the character.
+6. The character should be TALL and CENTERED, filling most of the vertical space (head near top, feet near bottom).
+7. Keep the same art style as the original (anime, realistic, etc.).
+
+Output: a single character image on a clean background, T-pose, full body visible from head to feet.`;
+
+    let outB64 = charB64, outMime = charMime;
+
+    try {
+      setProgress(20, '🤖 Gemini が処理中... (10〜30秒かかります)');
+      const resp = await callGeminiImgGen(apiKey, prompt, charB64, charMime);
+      const parts = resp.candidates?.[0]?.content?.parts || [];
+      const imgPart = parts.find(p => p.inline_data?.mime_type?.startsWith('image/'));
+      if (imgPart) {
+        outB64  = imgPart.inline_data.data;
+        outMime = imgPart.inline_data.mime_type;
+        setProgress(65, '✅ キャラクター変換完了！合成中...');
+      } else {
+        setProgress(65, '⚠️ 変換できませんでした。元画像で合成します...');
+      }
+    } catch(e) {
+      console.warn('Gemini error:', e.message);
+      setProgress(65, `⚠️ Gemini エラー (${e.message.slice(0,60)})。元画像で合成...`);
+    }
+
+    // ── Canvas composite ───────────────────────────────────
+    setProgress(75, '🖼️ 画像を合成中...');
+    const S = 1024;
+    const canvas = document.getElementById('outputCanvas');
+    canvas.width = S; canvas.height = S;
+    const ctx = canvas.getContext('2d');
+
+    drawBg(ctx, S);
+
+    // Draw character
+    try {
+      const charImg = await loadImg(outB64, outMime);
+      const charH = S * 0.76;
+      const charW = charImg.width * (charH / charImg.height);
+      const charX = (S - charW) / 2;
+      const charY = S * 0.03;
+      ctx.drawImage(charImg, charX, charY, charW, charH);
+    } catch(e) { console.warn('char draw:', e); }
+
+    // Gold text
+    const mainText = `キミは${jinText}JIN`;
+    drawGoldText(ctx, mainText, S/2, S*0.615, S);
+
+    // Subtitle
+    drawSubtitle(ctx, `キミは${jinText}JIN？`, S/2, S*0.882, S);
+
+    setProgress(100, '🎉 完成！');
+    document.getElementById('resultWrap').style.display = 'block';
+    setStep4('done');
+
+  } catch(e) {
+    setProgress(0, `❌ エラー: ${e.message}`, true);
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function downloadImage() {
+  const jinText = document.getElementById('jinText').value.trim().toUpperCase() || 'JIN';
+  const a = document.createElement('a');
+  a.download = `kimi_wa_${jinText}JIN.png`;
+  a.href = document.getElementById('outputCanvas').toDataURL('image/png');
+  a.click();
+}
+
+function setProgress(pct, msg, isErr=false) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  const s = document.getElementById('statusMsg');
+  if (msg) { s.textContent = msg; s.className = 'status-msg' + (isErr?' error':''); }
+}
+function setStep4(state) { ss('s4', state); }
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position:'fixed', bottom:'2rem', left:'50%', transform:'translateX(-50%)',
+    background:'#2a1e08', border:'1px solid #3d8a30', color:'#6ec460',
+    padding:'0.55rem 1.2rem', borderRadius:'8px', fontSize:'0.82rem',
+    zIndex:9999, pointerEvents:'none', transition:'opacity 0.3s'
+  });
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2000);
+}
+</script>
+</body>
+</html>
