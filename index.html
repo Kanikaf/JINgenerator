@@ -144,80 +144,90 @@ function prog(p,m,e){
 }
 
 // ── Draw rainbow swirl background ──────────────────────────
-// Colors sampled from reference KANTOUJIN image (outer ring, 0-345 degrees)
-// Mapped to HSL-style rainbow: red→orange→yellow→green→cyan→blue→purple→magenta→red
-function drawBg(ctx,S){
-  var cx=S/2, cy=S/2;
+// Colors precisely sampled from KOUSHIETSUJIN reference image outer ring
+// angle(deg) → [R, G, B]
+var RING = [
+  [0,149,15,167],[5,253,233,41],[10,174,44,6],[15,209,137,25],
+  [20,248,25,200],[25,214,30,148],[30,193,32,110],[35,192,37,93],
+  [40,223,46,77],[45,240,58,60],[50,253,101,43],[55,247,89,44],
+  [60,227,118,47],[65,172,107,51],[70,196,143,41],[75,184,161,114],
+  [80,191,156,25],[85,202,178,14],[90,223,208,10],[95,173,162,20],
+  [100,147,156,28],[105,222,226,196],[110,215,219,150],[115,185,190,68],
+  [120,172,169,22],[125,183,165,15],[130,185,161,11],[135,183,161,5],
+  [140,198,167,4],[145,202,171,5],[150,210,177,3],[155,222,186,2],
+  [160,233,197,4],[165,191,102,10],[170,252,240,91],[175,253,231,45],
+  [180,248,224,2],[185,237,205,4],[190,233,191,2],[195,234,187,3],
+  [200,234,187,4],[205,234,188,4],[210,233,194,2],[215,232,202,4],
+  [220,243,216,5],[225,252,235,2],[230,252,249,3],[235,254,245,2],
+  [240,227,232,4],[245,201,219,3],[250,181,210,5],[255,155,205,17],
+  [260,148,210,25],[265,134,220,46],[270,123,231,74],[275,94,239,107],
+  [280,48,233,126],[285,35,226,128],[290,6,187,128],[295,2,149,142],
+  [300,3,119,160],[305,1,104,173],[310,2,93,179],[315,2,82,175],
+  [320,30,78,178],[325,68,72,180],[330,100,63,181],[335,115,46,191],
+  [340,107,21,176],[345,144,16,193],[350,205,19,218],[355,176,18,194]
+];
 
-  // Fill entire canvas with a warm mid-tone base
-  ctx.fillStyle='#1a0800';
+function getRingColor(angleDeg) {
+  // Normalize angle to 0-360
+  angleDeg = ((angleDeg % 360) + 360) % 360;
+  var step = 5;
+  var idx = Math.floor(angleDeg / step);
+  var frac = (angleDeg % step) / step;
+  var c0 = RING[idx % RING.length];
+  var c1 = RING[(idx+1) % RING.length];
+  return [
+    Math.round(c0[1]*(1-frac) + c1[1]*frac),
+    Math.round(c0[2]*(1-frac) + c1[2]*frac),
+    Math.round(c0[3]*(1-frac) + c1[3]*frac)
+  ];
+}
+
+function drawBg(ctx, S) {
+  var cx = S/2, cy = S/2;
+  var maxR = S * 0.71;
+  var turns = 3.5; // spiral turns
+  var steps = 2000;
+
+  // Dark base
+  ctx.fillStyle = '#0a0010';
   ctx.fillRect(0,0,S,S);
 
-  // The swirl: draw many thick spiral arcs
-  // Reference shows bright saturated rainbow spiraling ~3-4 turns from center to edge
-  // Colors go: yellow→orange→red→magenta→purple→blue→cyan→green→yellow (repeating)
-  var rainbow=[
-    [255,220,0],   // yellow
-    [255,160,0],   // orange-yellow
-    [255,80,0],    // orange
-    [255,20,20],   // red
-    [220,0,80],    // red-magenta
-    [180,0,180],   // magenta/purple
-    [100,0,200],   // purple
-    [0,30,220],    // blue
-    [0,150,220],   // cyan-blue
-    [0,210,180],   // cyan
-    [0,200,80],    // green-cyan
-    [60,200,0],    // green
-    [150,220,0],   // yellow-green
-    [255,220,0],   // yellow (close loop)
-  ];
+  // Draw spiral: each step is a short arc
+  // Color = ring color at current angle, brightness scales with radius
+  for (var i = 0; i < steps; i++) {
+    var t = i / steps;
+    var angle = t * Math.PI * 2 * turns;
+    var r = t * maxR;
+    var angleDeg = (angle * 180 / Math.PI) % 360;
 
-  var maxR=S*0.72;
-  var turns=3.8;
-  var steps=1800;
+    var col = getRingColor(angleDeg);
+    // Brightness: dark at center, full at edge
+    var bright = 0.25 + 0.75 * t;
+    var rc = Math.min(255, Math.round(col[0] * bright));
+    var gc = Math.min(255, Math.round(col[1] * bright));
+    var bc = Math.min(255, Math.round(col[2] * bright));
 
-  for(var i=0;i<steps;i++){
-    var t=i/steps;
-    var angle=t*Math.PI*2*turns - Math.PI*0.5; // start from top
-    var r=t*maxR;
-
-    // Color: cycle through rainbow based on angle position
-    var colorPos=((angle/(Math.PI*2))%1+1)%1; // 0-1 based on angle
-    var ci=colorPos*(rainbow.length-1);
-    var c0=Math.floor(ci)%rainbow.length;
-    var c1=(c0+1)%rainbow.length;
-    var cf=ci-Math.floor(ci);
-    var rc=Math.round(rainbow[c0][0]*(1-cf)+rainbow[c1][0]*cf);
-    var gc=Math.round(rainbow[c0][1]*(1-cf)+rainbow[c1][1]*cf);
-    var bc=Math.round(rainbow[c0][2]*(1-cf)+rainbow[c1][2]*cf);
-
-    // Brightness: brighter toward outside
-    var bright=0.4+0.6*t;
-    rc=Math.min(255,Math.round(rc*bright));
-    gc=Math.min(255,Math.round(gc*bright));
-    bc=Math.min(255,Math.round(bc*bright));
-
+    var arcSpan = (Math.PI * 2 * turns / steps) * 2.5;
     ctx.beginPath();
-    var span=(Math.PI*2*turns/steps)*2.2;
-    ctx.arc(cx,cy,r,angle,angle+span);
-    ctx.lineWidth=maxR/48;
-    ctx.strokeStyle='rgb('+rc+','+gc+','+bc+')';
-    ctx.globalAlpha=0.88;
+    ctx.arc(cx, cy, r, angle, angle + arcSpan);
+    ctx.lineWidth = maxR / 42; // thick lines = smooth fill
+    ctx.strokeStyle = 'rgb('+rc+','+gc+','+bc+')';
+    ctx.globalAlpha = 1.0;
     ctx.stroke();
   }
-  ctx.globalAlpha=1;
+  ctx.globalAlpha = 1;
 
-  // Subtle radial glow at center
-  var g=ctx.createRadialGradient(cx,cy,0,cx,cy,S*0.28);
-  g.addColorStop(0,'rgba(255,240,180,0.22)');
+  // Center bright glow
+  var g = ctx.createRadialGradient(cx,cy,0,cx,cy,S*0.22);
+  g.addColorStop(0,'rgba(255,240,200,0.35)');
   g.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=g; ctx.fillRect(0,0,S,S);
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,S,S);
 
-  // Sparkles (bottom right area)
-  drawSpark(ctx,S*0.84,S*0.80,S*0.020,'rgba(255,255,255,0.9)');
-  drawSpark(ctx,S*0.76,S*0.88,S*0.012,'rgba(255,255,255,0.6)');
-  drawSpark(ctx,S*0.92,S*0.70,S*0.009,'rgba(255,255,255,0.5)');
+  // Sparkles
+  drawSpark(ctx, S*0.84, S*0.80, S*0.020, 'rgba(255,255,255,0.95)');
+  drawSpark(ctx, S*0.76, S*0.88, S*0.012, 'rgba(255,255,255,0.65)');
+  drawSpark(ctx, S*0.91, S*0.70, S*0.009, 'rgba(255,255,255,0.5)');
 }
 
 function drawSpark(ctx,x,y,sz,col){
